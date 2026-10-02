@@ -16,6 +16,7 @@
 */
 
 #include "ParameterObjects.h"
+#include "CSXCADLogging.h"
 #include <sstream>
 #include <iostream>
 #include "tinyxml.h"
@@ -134,7 +135,7 @@ Parameter::~Parameter()
 
 void Parameter::PrintSelf(FILE* /*out*/)
 {
-	fprintf(stderr," Parameter: %s  Value: %f  Type %d\n\n",sName.c_str(),dValue,Type);
+	logDebug() << "Parameter " << sName << ": value=" << dValue << ", type=" << Type;
 }
 
 bool Parameter::Write2XML(TiXmlNode& root)
@@ -237,7 +238,8 @@ bool LinearParameter::IncreaseStep()
 
 void LinearParameter::PrintSelf(FILE* /*out*/)
 {
-	fprintf(stderr," Parameter: %s  Value: %f\n from %f to %f; Stepsize: %f\n",sName.c_str(),dValue,dMin,dMax,dStep);
+	logDebug() << "Parameter " << sName << ": value=" << dValue << ", range=[" << dMin << ", " << dMax
+	           << "], step=" << dStep;
 }
 
 bool LinearParameter::Write2XML(TiXmlNode& root)

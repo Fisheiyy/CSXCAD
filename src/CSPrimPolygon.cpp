@@ -22,6 +22,7 @@
 #include "stdint.h"
 
 #include "CSPrimPolygon.h"
+#include "CSXCADLogging.h"
 #include "CSProperties.h"
 #include "CSUseful.h"
 
@@ -224,7 +225,7 @@ bool CSPrimPolygon::Update(std::string *ErrStr)
 	bool bOK=true;
 	if (! ((m_PrimCoordSystem==CARTESIAN) || (m_PrimCoordSystem==UNDEFINED_CS && m_MeshType==CARTESIAN)))
 	{
-		std::cerr << "CSPrimPolygon::Update: Warning: CSPrimPolygon can not be defined in non Cartesian coordinate systems! Result may be unexpected..." << std::endl;
+		logWarning() << "CSPrimPolygon cannot be defined in non-Cartesian coordinate systems; result may be unexpected";
 		if (ErrStr!=NULL)
 			ErrStr->append("Warning: CSPrimPolygon can not be defined in non Cartesian coordinate systems! Result may be unexpected...\n");
 	}

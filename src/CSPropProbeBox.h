@@ -47,7 +47,7 @@ public:
 	//! Get the normal direction of this probe box (required by some types of probes)
 	int GetNormalDir() const {return m_NormDir;}
 	//! Set the normal direction of this probe box (required by some types of probes)
-	void SetNormalDir(unsigned int ndir) {m_NormDir=ndir;}
+	void SetNormalDir(unsigned int ndir) {m_NormDir=static_cast<int>(ndir);}
 
 	//! Define/Set the probe weighting \sa GetWeighting
 	void SetWeighting(double weight) {m_weight=weight;}

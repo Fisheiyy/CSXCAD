@@ -27,6 +27,7 @@
 #include <vtkCellArray.h>
 
 #include "CSPrimPolyhedronReader.h"
+#include "CSXCADLogging.h"
 #include "CSProperties.h"
 #include "CSUseful.h"
 
@@ -91,13 +92,13 @@ bool CSPrimPolyhedronReader::ReadFromXML(TiXmlNode &root)
 	if (elem==NULL) return false;
 	if (elem->QueryStringAttribute("FileName",&m_filename)!=TIXML_SUCCESS)
 	{
-		std::cerr << "CSPrimPolyhedronReader::ReadFromXML: Error, can't read filename!" << std::endl;
+		logError() << "Cannot read polyhedron filename from XML";
 		return false;
 	}
 	std::string type;
 	if (elem->QueryStringAttribute("FileType",&type)!=TIXML_SUCCESS)
 	{
-		std::cerr << "CSPrimPolyhedronReader::ReadFromXML: Error, can't read file type!" << std::endl;
+		logError() << "Cannot read polyhedron file type from XML";
 		return false;
 	}
 	if (type.compare("STL")==0)
@@ -109,7 +110,7 @@ bool CSPrimPolyhedronReader::ReadFromXML(TiXmlNode &root)
 
 	if (ReadFile()==false)
 	{
-		std::cerr << "CSPrimPolyhedronReader::ReadFromXML: Failed to read file." << std::endl;
+		logError() << "Failed to read polyhedron file";
 		return false;
 	}
 
@@ -144,21 +145,21 @@ bool CSPrimPolyhedronReader::ReadFile()
 	case UNKNOWN:
 	default:
 	{
-		std::cerr << "CSPrimPolyhedronReader::ReadFile: unknown filetype, skipping..." << std::endl;
+		logError() << "Unknown polyhedron file type; skipping";
 		return false;
 	}
 	}
 	//polydata->Update(); // not available for vtk 6.x, now done only on reader?
 	if ((polydata==NULL) || (polydata->GetNumberOfPoints()==0) || (polydata->GetNumberOfCells()==0))
 	{
-		std::cerr << "CSPrimPolyhedronReader::ReadFile: file invalid or empty, skipping ..." << std::endl;
+		logError() << "STL file is invalid or empty; skipping";
 		readerObj->Delete();
 		return false;
 	}
 	vtkCellArray *verts = polydata->GetPolys();
 	if (verts->GetNumberOfCells()==0)
 	{
-		std::cerr << "CSPrimPolyhedronReader::ReadFile: file invalid or empty, skipping ..." << std::endl;
+		logError() << "PLY file is invalid or empty; skipping";
 		readerObj->Delete();
 		return false;
 	}

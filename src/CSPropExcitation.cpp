@@ -19,6 +19,7 @@
 #include "tinyxml.h"
 
 #include "CSPropExcitation.h"
+#include "CSXCADLogging.h"
 
 CSPropExcitation::CSPropExcitation(ParameterSet* paraSet,unsigned int number) : CSProperties(paraSet) {Type=EXCITATION;Init();uiNumber=number;}
 CSPropExcitation::CSPropExcitation(CSPropExcitation* prop, bool copyPrim) : CSProperties(prop, copyPrim)
@@ -146,7 +147,7 @@ double CSPropExcitation::GetWeightedExcitation(int ny, const double* coords)
 
 		if (!m_WeightFileData.IsLoaded())
 		{
-			std::cerr << "CSPropExcitation::GetWeightedExcitation: weight file '" << m_WeightFile << "' could not be loaded\n";
+			logError() << "Weight file '" << m_WeightFile << "' could not be loaded";
 			return 0.0;
 		}
 
@@ -160,11 +161,9 @@ double CSPropExcitation::GetWeightedExcitation(int ny, const double* coords)
 
 		if ((nPy < 0) || (checkSum != 1))
 		{
-			std::cerr << "CSPropExcitation::GetWeightedExcitation: cannot determine propagation direction, "
-			             "PropagationDir = ("
-			          << PropagationDir[0].GetValue() << ", "
-			          << PropagationDir[1].GetValue() << ", "
-			          << PropagationDir[2].GetValue() << ")\n";
+			logError() << "Cannot determine propagation direction; PropagationDir = ("
+			           << PropagationDir[0].GetValue() << ", " << PropagationDir[1].GetValue() << ", "
+			           << PropagationDir[2].GetValue() << ")";
 			return 0.0;
 		}
 
@@ -191,8 +190,8 @@ double CSPropExcitation::GetWeightedExcitation(int ny, const double* coords)
 
 		int EC = WeightFct[ny].Evaluate();
 		if (EC)
-			std::cerr << "CSPropExcitation::GetWeightedExcitation: error evaluating weight function "
-			             "(ID: " << this->GetID() << ", n=" << ny << "): " << PSErrorCode2Msg(EC) << "\n";
+			logError() << "Error evaluating weight function for property " << this->GetID() << ", n=" << ny
+			           << ": " << PSErrorCode2Msg(EC);
 		cWeight = WeightFct[ny].GetValue();
 	}
 	return cWeight * GetExcitation(ny);

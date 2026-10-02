@@ -6,6 +6,7 @@ set( PUB_HEADERS
   CSRectGrid.h
   CSXCAD_Global.h
   CSObject.h
+  CSSpatialIndex.h
   ParameterObjects.h
   CSFunctionParser.h
   CSUseful.h
@@ -55,6 +56,7 @@ set(SOURCES
   ParameterCoord.cpp
   CSTransform.cpp
   CSObject.cpp
+  CSSpatialIndex.cpp
   CSPrimPoint.cpp
   CSPrimBox.cpp
   CSPrimMultiBox.cpp

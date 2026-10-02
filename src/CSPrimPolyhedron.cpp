@@ -22,6 +22,7 @@
 #include "stdint.h"
 
 #include "CSPrimPolyhedron.h"
+#include "CSXCADLogging.h"
 #include "CSPrimPolyhedron_p.h"
 #include "CSProperties.h"
 #include "CSUseful.h"
@@ -45,14 +46,14 @@ void Polyhedron_Builder::operator()(HalfedgeDS &hds)
 			B.add_facet(first, beyond);
 			if (B.error())
 			{
-				std::cerr << "Polyhedron_Builder::operator(): Error in polyhedron construction" << std::endl;
+				logError() << "Error constructing polyhedron face " << f;
 				break;
 			}
 			m_polyhedron->m_Faces.at(f).valid=true;
 		}
 		else
 		{
-			std::cerr << "Polyhedron_Builder::operator(): Face " << f << ": Trying reverse order... ";
+			logDebug() << "Polyhedron face " << f << " is invalid in forward order; trying reverse order";
 			int* help = new int [m_polyhedron->m_Faces.at(f).numVertex];
 			for (unsigned int n=0;n<m_polyhedron->m_Faces.at(f).numVertex;++n)
 				help[n]=m_polyhedron->m_Faces.at(f).vertices[m_polyhedron->m_Faces.at(f).numVertex-1-n];
@@ -63,16 +64,16 @@ void Polyhedron_Builder::operator()(HalfedgeDS &hds)
 				B.add_facet(first, beyond);
 				if (B.error())
 				{
-					std::cerr << "Polyhedron_Builder::operator(): Error in polyhedron construction" << std::endl;
+					logError() << "Error constructing reversed polyhedron face " << f;
 					delete[] help;
 					break;
 				}
-				std::cerr << "success" << std::endl;
+				logDebug() << "Polyhedron face " << f << " succeeded in reverse order";
 				m_polyhedron->m_Faces.at(f).valid=true;
 			}
 			else
 			{
-				std::cerr << "failed" << std::endl;
+				logWarning() << "Polyhedron face " << f << " is invalid in both forward and reverse order";
 				++m_polyhedron->m_InvalidFaces;
 			}
 			delete[] help; help = NULL;
@@ -160,7 +161,7 @@ void CSPrimPolyhedron::AddFace(int numVertex, int* vertices)
 	face f;
 	f.numVertex=numVertex;
 	if (f.numVertex>3)
-		std::cerr << __func__ << ": Warning, faces other than triangles are currently not supported for discretization, expect false results!!!" << std::endl;
+		logWarning() << "Faces other than triangles are not supported for discretization; results may be incorrect";
 	f.vertices=new int[numVertex];
 	for (int n=0;n<numVertex;++n)
 		f.vertices[n]=vertices[n];
@@ -173,7 +174,7 @@ void CSPrimPolyhedron::AddFace(std::vector<int> vertices)
 	face f;
 	f.numVertex=vertices.size();
 	if (f.numVertex>3)
-		std::cerr << __func__ << ": Warning, faces other than triangles are currently not supported for discretization, expect false results!!!" << std::endl;
+		logWarning() << "Faces other than triangles are not supported for discretization; results may be incorrect";
 	f.vertices=new int[f.numVertex];
 	for (unsigned int n=0;n<f.numVertex;++n)
 		f.vertices[n]=vertices.at(n);
@@ -214,7 +215,7 @@ bool CSPrimPolyhedron::BuildTree()
 		if (m_InvalidFaces>0)
 		{
 			m_Dimension = 3;
-			std::cerr << "CSPrimPolyhedron::BuildTree: Warning, found polyhedron has invalud faces and is not a closed surface, setting to 3D solid anyway!" << std::endl;
+			logWarning() << "Polyhedron has invalid faces and is not a closed surface; treating it as a 3D solid anyway";
 		}
 	}
 

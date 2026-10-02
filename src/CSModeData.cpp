@@ -23,6 +23,7 @@
 #include <hdf5_hl.h>
 
 #include "CSModeData.h"
+#include "CSXCADLogging.h"
 
 namespace {
 
@@ -63,9 +64,8 @@ bool ReadMat(hid_t fid, const char* name, std::vector<double>& out,
 
 	if (dims[0] != expected_nx || dims[1] != expected_ny)
 	{
-		std::cerr << "CSModeData: dataset '" << name << "' has shape ("
-		          << dims[0] << ", " << dims[1] << "), expected ("
-		          << expected_nx << ", " << expected_ny << ")\n";
+		logError() << "Dataset '" << name << "' has shape (" << dims[0] << ", " << dims[1]
+		           << "), expected (" << expected_nx << ", " << expected_ny << ")";
 		return false;
 	}
 
@@ -82,7 +82,7 @@ bool CSModeData::ReadFromHDF5(const std::string& filename)
 	hid_t fid = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
 	if (fid < 0)
 	{
-		std::cerr << "CSModeData: failed to open '" << filename << "'\n";
+		logError() << "Failed to open '" << filename << "'";
 		return false;
 	}
 
@@ -90,14 +90,14 @@ bool CSModeData::ReadFromHDF5(const std::string& filename)
 	H5LTget_attribute_double(fid, "/", "Version", &version);
 	if (version < 1.0)
 	{
-		std::cerr << "CSModeData: unsupported or missing Version attribute in '" << filename << "'\n";
+		logError() << "Unsupported or missing Version attribute in '" << filename << "'";
 		H5Fclose(fid);
 		return false;
 	}
 
 	if (!ReadVec(fid, "x", m_X) || !ReadVec(fid, "y", m_Y))
 	{
-		std::cerr << "CSModeData: missing or invalid 'x' or 'y' dataset in '" << filename << "'\n";
+		logError() << "Missing or invalid 'x' or 'y' dataset in '" << filename << "'";
 		H5Fclose(fid);
 		return false;
 	}
@@ -106,7 +106,7 @@ bool CSModeData::ReadFromHDF5(const std::string& filename)
 
 	if (!ReadMat(fid, "Vx", m_Vx, m_nx, m_ny) || !ReadMat(fid, "Vy", m_Vy, m_nx, m_ny))
 	{
-		std::cerr << "CSModeData: missing or invalid 'Vx' or 'Vy' dataset in '" << filename << "'\n";
+		logError() << "Missing or invalid 'Vx' or 'Vy' dataset in '" << filename << "'";
 		H5Fclose(fid);
 		Clear();
 		return false;

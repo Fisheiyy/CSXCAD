@@ -18,6 +18,7 @@
 #include "tinyxml.h"
 
 #include "CSPropConductingSheet.h"
+#include "CSXCADLogging.h"
 
 CSPropConductingSheet::CSPropConductingSheet(ParameterSet* paraSet) : CSPropMetal(paraSet) {Type=(CSProperties::PropertyType)(CONDUCTINGSHEET | METAL);Init();}
 CSPropConductingSheet::CSPropConductingSheet(CSPropConductingSheet* prop, bool copyPrim) : CSPropMetal(prop, copyPrim)
@@ -87,9 +88,9 @@ bool CSPropConductingSheet::ReadFromXML(TiXmlNode &root)
 	if (prop==NULL) return false;
 
 	if (ReadTerm(Conductivity,*prop,"Conductivity")==false)
-		std::cerr << "CSPropConductingSheet::ReadFromXML: Warning: Failed to read Conductivity. Set to 0." << std::endl;
+		logWarning() << "Failed to read conductivity; setting it to 0";
 	if (ReadTerm(Thickness,*prop,"Thickness")==false)
-		std::cerr << "CSPropConductingSheet::ReadFromXML: Warning: Failed to read Thickness. Set to 0." << std::endl;
+		logWarning() << "Failed to read thickness; setting it to 0";
 
 	return true;
 }

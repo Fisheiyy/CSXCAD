@@ -18,6 +18,7 @@
 #include "tinyxml.h"
 
 #include "CSPropLumpedElement.h"
+#include "CSXCADLogging.h"
 
 CSPropLumpedElement::CSPropLumpedElement(ParameterSet* paraSet) : CSProperties(paraSet) {Type=LUMPED_ELEMENT;Init();}
 CSPropLumpedElement::CSPropLumpedElement(CSPropLumpedElement* prop, bool copyPrim) : CSProperties(prop, copyPrim)
@@ -147,8 +148,7 @@ bool CSPropLumpedElement::ReadFromXML(TiXmlNode &root)
 		else
 		{
 			if (i_RLCtype != 0)
-				std::cerr << "CSPropLumpedElement::ReadFromXML(): Warning: unknown LEtype value "
-				          << i_RLCtype << ", defaulting to parallel." << std::endl;
+				logWarning() << "Unknown LEtype value " << i_RLCtype << "; defaulting to parallel";
 			m_LEtype = PARALLEL;
 		}
 	}
@@ -176,5 +176,3 @@ void CSPropLumpedElement::ShowPropertyStatus(std::ostream& stream)
 	}
 	stream << "  Type: " << s_type << std::endl;
 }
-
-

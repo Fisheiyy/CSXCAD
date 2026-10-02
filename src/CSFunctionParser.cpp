@@ -16,6 +16,7 @@
 */
 
 #include "CSFunctionParser.h"
+#include "CSXCADLogging.h"
 #include <math.h>
 #include <iostream>
 
@@ -30,11 +31,7 @@ double bessel_first_kind_1(const double* p)
 double bessel_first_kind_n(const double* p)
 {
 	int n=p[0];
-	if (n<0)
-	{
-		std::cerr << "CSFunctionParser::bessel_first_kind_n (jn): first argument must be integer larger than zero! found: " << p[0] << std::endl;
-		return 0;
-	}
+	CU_ASSERT(n >= 0) << "First argument must be an integer larger than zero; found " << p[0];
 	return jn(n,p[1]);
 }
 
@@ -49,11 +46,7 @@ double bessel_second_kind_1(const double* p)
 double bessel_second_kind_n(const double* p)
 {
 	int n=p[0];
-	if (n<0)
-	{
-		std::cerr << "CSFunctionParser::bessel_second_kind_n (yn): first argument must be integer larger than zero! found: " << p[0] << std::endl;
-		return 0;
-	}
+	CU_ASSERT(n >= 0) << "First argument must be an integer larger than zero; found " << p[0];
 	return yn(n,p[1]);
 }
 

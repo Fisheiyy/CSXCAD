@@ -16,6 +16,7 @@
 */
 
 #include "ContinuousStructure.h"
+#include "CSXCADLogging.h"
 
 #include "CSPrimPoint.h"
 #include "CSPrimBox.h"
@@ -121,6 +122,7 @@ void ContinuousStructure::RemoveProperty(CSProperties* prop)
 			vProperties.erase(iter);
 			prop->SetOwner(NULL);   // ownership is handed back to the caller
 			this->UpdateIDs();
+			CSSpatialIndex_BumpGeneration();
 			return;
 		}
 }
@@ -132,6 +134,7 @@ void ContinuousStructure::DeleteProperty(size_t index)
 	delete vProperties.at(index);
 	vProperties.erase(iter+index);
 	this->UpdateIDs();
+	CSSpatialIndex_BumpGeneration();
 }
 
 void ContinuousStructure::DeleteProperty(CSProperties* prop)
@@ -144,6 +147,7 @@ void ContinuousStructure::DeleteProperty(CSProperties* prop)
 			delete *iter;
 			vProperties.erase(iter);
 			this->UpdateIDs();
+			CSSpatialIndex_BumpGeneration();
 			return;
 		}
 	}
@@ -222,7 +226,7 @@ std::vector<CSPrimitives*> ContinuousStructure::GetPrimitivesByType(CSPrimitives
 {
 	UNUSED(type);
 	std::vector<CSPrimitives*> vPrim;
-	std::cerr << __func__ << ": Error, not yet implemented!" << std::endl;
+	logError() << "Primitive lookup by type is not implemented";
 	return vPrim;
 }
 
@@ -283,46 +287,34 @@ CSProperties* ContinuousStructure::GetProperty(size_t index)
 	return NULL;
 }
 
+void ContinuousStructure::EnsureSpatialIndex() const
+{
+	unsigned long curGen = CSSpatialIndex_CurrentGeneration();
+	if (m_SpatialIndex && m_SpatialIndexGeneration == curGen)
+		return;
+
+	std::lock_guard<std::mutex> lock(m_SpatialIndexMutex);
+	// re-check now that we hold the lock -- another thread may have already rebuilt it
+	curGen = CSSpatialIndex_CurrentGeneration();
+	if (m_SpatialIndex && m_SpatialIndexGeneration == curGen)
+		return;
+
+	if (!m_SpatialIndex)
+		m_SpatialIndex = std::make_unique<CSSpatialIndex>();
+	m_SpatialIndex->Build(vProperties, dDrawingTol);
+	m_SpatialIndexGeneration = curGen;
+}
+
 CSProperties* ContinuousStructure::GetPropertyByCoordPriority(const double* coord, CSProperties::PropertyType type, bool markFoundAsUsed, CSPrimitives** foundPrimitive)
 {
-	CSProperties* winProp=NULL;
-	CSPrimitives* winPrim=NULL;
-	CSPrimitives* locPrim=NULL;
-	int winPrio=0;
-	int locPrio=0;
-	for (size_t i=0;i<vProperties.size();++i)
-	{
-		if ((type==CSProperties::ANY) || (vProperties.at(i)->GetType() & type))
-		{
-			locPrim = vProperties.at(i)->CheckCoordInPrimitive(coord,locPrio,false,dDrawingTol);
-			if (locPrim)
-			{
-				if (winProp==NULL)
-				{
-					winPrio=locPrio;
-					winProp=vProperties.at(i);
-					winPrim=locPrim;
-				}
-				else if (locPrio>winPrio)
-				{
-					winPrio=locPrio;
-					winProp=vProperties.at(i);
-					winPrim=locPrim;
-				}
-			}
-		}
-	}
-	if ((markFoundAsUsed) && (winPrim))
-		winPrim->SetPrimitiveUsed(true);
-	if (foundPrimitive)
-		*foundPrimitive=winPrim;
-	return winProp;
+	EnsureSpatialIndex();
+	return m_SpatialIndex->Query(coord, type, markFoundAsUsed, foundPrimitive, dDrawingTol);
 }
 
 
 CSProperties** ContinuousStructure::GetPropertiesByCoordsPriority(const double* /*coords*/, CSProperties::PropertyType /*type*/, bool /*markFoundAsUsed*/)
 {
-	std::cerr << "ContinuousStructure::GetPropertiesByCoordsPriority --> This methode has not been implemented yet!!! return NULL" << std::endl;
+	logError() << "Property lookup by coordinate list is not implemented; returning null";
 	return NULL;
 }
 
@@ -378,7 +370,7 @@ void ContinuousStructure::SetCoordInputType(CoordinateSystem type)
 
 CoordinateSystem ContinuousStructure::GetCoordInputType() {return m_MeshType;}
 
-void ContinuousStructure::SetDrawingTolerance(double val) {dDrawingTol=val;}
+void ContinuousStructure::SetDrawingTolerance(double val) {dDrawingTol=val; CSSpatialIndex_BumpGeneration();}
 
 bool ContinuousStructure::isGeometryValid()
 {
@@ -567,7 +559,7 @@ const char* ContinuousStructure::ReadFromXML(TiXmlNode* rootNode)
 		
 		else
 		{
-			std::cerr << "ContinuousStructure::ReadFromXML: Property with type: " << cProp << " is unknown... " << std::endl;
+			logWarning() << "Unknown property type in XML: " << cProp;
 			newProp=NULL;
 		}
 		if (newProp)
@@ -634,7 +626,7 @@ bool ContinuousStructure::ReadPropertyPrimitives(TiXmlElement* PropNode, CSPrope
 		else if (strcmp(cPrim,"Point")==0) newPrim = new CSPrimPoint(clParaSet,prop);
 		else
 		{
-			std::cerr << "ContinuousStructure::ReadFromXML: Primitive with type: " << cPrim << " is unknown... " << std::endl;
+			logWarning() << "Unknown primitive type in XML: " << cPrim;
 			newPrim=NULL;
 		}
 		if (newPrim)
@@ -696,7 +688,5 @@ std::string ContinuousStructure::GetInfoLine(bool shortInfo)
 					  +std::string("\nLicense: ") + std::string(_CSXCAD_LICENSE_);
 	return InfoLine;
 }
-
-
 
 

@@ -18,6 +18,7 @@
 #include "tinyxml.h"
 
 #include "CSPropAbsorbingBC.h"
+#include "CSXCADLogging.h"
 
 #define _C0_ 299792458.0
 
@@ -65,7 +66,7 @@ void CSPropAbsorbingBC::SetPhaseVelocity(double val)
 		PhaseVelocity.SetValue(val);
 	else
 	{
-		std::cerr << "CSPropAbsorbingBC::SetPhaseVelocity: Warning: Unable to set velocity smaller than zero. Setting to 0*C0" << std::endl;
+		logWarning() << "Cannot set a negative phase velocity; setting it to 0*C0";
 		PhaseVelocity.SetValue(0);
 	}
 
@@ -96,12 +97,12 @@ bool CSPropAbsorbingBC::ReadFromXML(TiXmlNode &root)
 
 	if (prop->QueryBoolAttribute("NormalSignPositive", &NormSignPositive) != TIXML_SUCCESS)
 	{
-		std::cerr << "CSPropAbsorbingBC::ReadFromXML: Warning: Failed to read normal sign. Setting to true" << std::endl;
+		logWarning() << "Failed to read normal sign; setting it to true";
 		NormSignPositive = true;
 	}
 
 	if (ReadTerm(PhaseVelocity,*prop,"PhaseVelocity")==false)
-		std::cerr << "CSPropAbsorbingBC::ReadFromXML: Warning: Failed to read Phase velocity. Set to C0." << std::endl;
+		logWarning() << "Failed to read phase velocity; setting it to C0";
 
 	int i_ABCtype;
 	if (prop->QueryIntAttribute("AbsorbingBoundaryType", &i_ABCtype) != TIXML_SUCCESS) i_ABCtype = 0;

@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 #include "CSXCAD_Global.h"
@@ -33,6 +35,7 @@
 #include "CSPrimitives.h"
 #include "CSRectGrid.h"
 #include "CSBackgroundMaterial.h"
+#include "CSSpatialIndex.h"
 #include "ParameterObjects.h"
 #include "CSUseful.h"
 #include "CSObject.h"
@@ -221,6 +224,18 @@ protected:
 
 	std::string ErrString;
 	unsigned int UniqueIDCounter;
+
+	//! Lazily (re)built spatial index accelerating GetPropertyByCoordPriority(); see CSSpatialIndex.
+	//! Mutable because it's a pure query-side cache with no observable effect on this object's
+	//! logical state, rebuilt on demand whenever CSSpatialIndex_CurrentGeneration() has moved past
+	//! the generation it was last built at (see CSSpatialIndex.h for why a generation counter rather
+	//! than a direct dirty flag is used).
+	mutable std::unique_ptr<CSSpatialIndex> m_SpatialIndex;
+	mutable unsigned long m_SpatialIndexGeneration = 0;
+	mutable std::mutex m_SpatialIndexMutex;
+
+	//! Ensure m_SpatialIndex reflects the structure's current properties/primitives.
+	void EnsureSpatialIndex() const;
 };
 
 

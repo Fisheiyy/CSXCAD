@@ -32,9 +32,11 @@
 #include "CSPropAbsorbingBC.h"
 
 #include "CSPrimitives.h"
+#include "CSSpatialIndex.h"
 #include <iostream>
 #include <sstream>
 #include "tinyxml.h"
+#include "CSXCADLogging.h"
 
 /*********************CSProperties********************************************************************/
 CSProperties::CSProperties(CSProperties* prop, bool copyPrim)
@@ -261,14 +263,18 @@ bool CSProperties::Write2XML(TiXmlNode& root, bool parameterised, bool sparse)
 
 void CSProperties::AddPrimitive(CSPrimitives *prim)
 {
+	CU_ASSERT(prim != NULL) << "Cannot add a null primitive";
+	if (prim == NULL)
+		return;
 	if (HasPrimitive(prim)==true)
 	{
-		std::cerr << __func__ << ": Error, primitive is already owned by this property!" << std::endl;
+		CU_ASSERT(false) << "Primitive is already owned by this property";
 		return;
 	}
 	prim->SetOwner(this);
 	vPrimitives.push_back(prim);
 	prim->SetProperty(this);
+	CSSpatialIndex_BumpGeneration();
 }
 
 bool CSProperties::HasPrimitive(CSPrimitives *prim)
@@ -291,6 +297,7 @@ void CSProperties::RemovePrimitive(CSPrimitives *prim)
 			vPrimitives.erase(iter);
 			prim->SetOwner(NULL);   // ownership is handed back to the caller
 			prim->SetProperty(NULL);
+			CSSpatialIndex_BumpGeneration();
 			return;
 		}
 	}
@@ -300,7 +307,7 @@ void CSProperties::DeletePrimitive(CSPrimitives *prim)
 {
 	if (!HasPrimitive(prim))
 	{
-		std::cerr << __func__ << ": Error, primitive not found, can't delete it! Skipping." << std::endl;
+		CU_ASSERT(false) << "Cannot delete a primitive that is not owned by this property";
 		return;
 	}
 	RemovePrimitive(prim);
@@ -314,6 +321,7 @@ CSPrimitives* CSProperties::TakePrimitive(size_t index)
 	std::vector<CSPrimitives*>::iterator iter=vPrimitives.begin()+index;
 	vPrimitives.erase(iter);
 	prim->SetOwner(NULL);   // ownership is handed back to the caller
+	CSSpatialIndex_BumpGeneration();
 	return prim;
 }
 

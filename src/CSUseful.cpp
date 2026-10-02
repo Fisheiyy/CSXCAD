@@ -16,6 +16,7 @@
 */
 
 #include "CSUseful.h"
+#include "CSXCADLogging.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sstream>
@@ -173,6 +174,5 @@ void CSDebug::Debug(int on_level, std::string message)
 {
 	if (on_level<=0) return; //no debug message for debug level smaller or equal zero
 	if (on_level>=m_level)
-		std::cerr << message << std::endl;
+		logDebug() << message;
 }
-

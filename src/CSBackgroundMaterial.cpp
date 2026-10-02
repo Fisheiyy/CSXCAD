@@ -16,12 +16,9 @@
 */
 
 #include "CSBackgroundMaterial.h"
+#include "CSXCADLogging.h"
 
 #include "tinyxml.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <string>
 
 CSBackgroundMaterial::CSBackgroundMaterial()
 {
@@ -39,41 +36,25 @@ void CSBackgroundMaterial::Reset()
 
 void CSBackgroundMaterial::SetEpsilon(double val)
 {
-	if (val<1)
-	{
-		std::cerr << __func__ << ": Error, a relative electric permittivity smaller 1 is not allowed! Skipping. " << std::endl;
-		return;
-	}
+    CU_ASSERT(val >= 1.0) << "Relative electric permittivity cannot be smaller than 1; skipping value";
 	m_epsR=val;
 }
 
 void CSBackgroundMaterial::SetMue(double val)
 {
-	if (val<1)
-	{
-		std::cerr << __func__ << ": Error, a relative magnetic permeability smaller 1 is not allowed! Skipping. " << std::endl;
-		return;
-	}
+	CU_ASSERT(val >= 1.0) << "Relative magnetic permeability cannot be smaller than 1; skipping value";
 	m_mueR=val;
 }
 
 void CSBackgroundMaterial::SetKappa(double val)
 {
-	if (val<0)
-	{
-		std::cerr << __func__ << ": Error, a negative electric conductivity is not allowed! Skipping. " << std::endl;
-		return;
-	}
+	CU_ASSERT(val >= 0) << "Electric conductivity cannot be negative; skipping value";
 	m_kappa=val;
 }
 
 void CSBackgroundMaterial::SetSigma(double val)
 {
-	if (val<0)
-	{
-		std::cerr << __func__ << ": Error, a negative (artificial) magnetic conductivity is not allowed! Skipping. " << std::endl;
-		return;
-	}
+	CU_ASSERT(val >= 0) << "Artificial magnetic conductivity cannot be negative; skipping value";
 	m_sigma=val;
 }
 

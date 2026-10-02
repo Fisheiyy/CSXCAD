@@ -16,6 +16,7 @@
 */
 
 #include "CSTransform.h"
+#include "CSXCADLogging.h"
 
 #include "CSUseful.h"
 #include "tinyxml.h"
@@ -139,10 +140,10 @@ bool CSTransform::SetMatrix(std::string matrix, bool concatenate)
 
 	double d_matrix[16];
 	if (mat_vec.size()>16)
-		std::cerr << "CSTransform::SetMatrix: Warning: Number of arguments for operation: \"Matrix\" with arguments: \"" << matrix << "\" is larger than expected, skipping unneeded! " << std::endl;
+		logWarning() << "Matrix has more arguments than expected; ignoring extras: \"" << matrix << "\"";
 	else if (mat_vec.size()<16)
 	{
-		std::cerr << "CSTransform::SetMatrix: Error: Number of arguments for operation: \"Matrix\" with arguments: \"" << matrix << "\" is invalid! Skipping" << std::endl;
+		logError() << "Matrix has an invalid number of arguments; skipping: \"" << matrix << "\"";
 		return false;
 	}
 
@@ -189,10 +190,10 @@ bool CSTransform::Translate(std::string translate, bool concatenate)
 	ParameterScalar ps_translate[3];
 	double tl_double_vec[3];
 	if (tl_vec.size()>3)
-		std::cerr << "CSTransform::Translate: Warning: Number of arguments for operation: \"Translate\" with arguments: \"" << translate << "\" is larger than expected, skipping unneeded! " << std::endl;
+		logWarning() << "Translate has more arguments than expected; ignoring extras: \"" << translate << "\"";
 	else if (tl_vec.size()<3)
 	{
-		std::cerr << "CSTransform::Translate: Error: Number of arguments for operation: \"Translate\" with arguments: \"" << translate << "\" is invalid! Skipping" << std::endl;
+		logError() << "Translate has an invalid number of arguments; skipping: \"" << translate << "\"";
 		return false;
 	}
 
@@ -219,7 +220,7 @@ bool CSTransform::RotateOriginMatrix(double matrix[16], const double XYZ_A[4])
 	double length = sqrt(XYZ_A[0]*XYZ_A[0]+XYZ_A[1]*XYZ_A[1]+XYZ_A[2]*XYZ_A[2]);
 	if (length==0)
 	{
-		std::cerr << "CSTransform::RotateOriginVector: Warning: vector length is zero! skipping" << std::endl;
+		logWarning() << "Rotation vector length is zero; skipping";
 		return false;
 	}
 
@@ -268,10 +269,10 @@ bool CSTransform::RotateOrigin(std::string XYZ_A, bool concatenate)
 	ParameterScalar ps_rotate[4];
 	double rot_double_vec[4];
 	if (rot_vec.size()>4)
-		std::cerr << "CSTransform::RotateOrigin: Warning: Number of arguments for operation: \"RotateOrigin\" with arguments: \"" << XYZ_A << "\" is larger than expected, skipping unneeded! " << std::endl;
+		logWarning() << "RotateOrigin has more arguments than expected; ignoring extras: \"" << XYZ_A << "\"";
 	else if (rot_vec.size()<4)
 	{
-		std::cerr << "CSTransform::RotateOrigin: Error: Number of arguments for operation: \"RotateOrigin\" with arguments: \"" << XYZ_A << "\" is invalid! Skipping" << std::endl;
+		logError() << "RotateOrigin has an invalid number of arguments; skipping: \"" << XYZ_A << "\"";
 		return false;
 	}
 
@@ -407,10 +408,10 @@ bool CSTransform::Scale(std::string scale, bool concatenate)
 	std::vector<std::string> scale_vec = SplitString2Vector(scale, ',');
 
 	if ((scale_vec.size()>1) && (scale_vec.size()!=3))
-		std::cerr << "CSTransform::Scale: Warning: Number of arguments for operation: \"Scale\" with arguments: \"" << scale << "\" is larger than expected, skipping unneeded! " << std::endl;
+		logWarning() << "Scale has more arguments than expected; ignoring extras: \"" << scale << "\"";
 	else if (scale_vec.size()<1)
 	{
-		std::cerr << "CSTransform::Scale: Error: Number of arguments for operation: \"Scale\" with arguments: \"" << scale << "\" is invalid! Skipping" << std::endl;
+		logError() << "Scale has an invalid number of arguments; skipping: \"" << scale << "\"";
 		return false;
 	}
 
@@ -451,7 +452,7 @@ bool CSTransform::Scale(std::string scale, bool concatenate)
 		return true;
 	}
 
-	std::cerr << "CSTransform::Scale: Error: Number of arguments for operation: \"Scale\" with arguments: \"" << scale << "\" is invalid! Skipping" << std::endl;
+	logError() << "Scale has an invalid number of arguments; skipping: \"" << scale << "\"";
 	return false;
 }
 
@@ -491,7 +492,7 @@ bool CSTransform::TransformByString(std::string operation, std::string argument,
 
 	if (type<0)
 	{
-		std::cerr << "CSTransform::TransformByString: Error, unknown transformation: \"" << operation << "\"" << std::endl;
+		logError() << "Unknown transformation: \"" << operation << "\"";
 		return false;
 	}
 
@@ -738,7 +739,7 @@ bool CSTransform::ReadFromXML(TiXmlNode* root)
 		const char* arg_attr = PropNode->Attribute("Argument");
 		std::string argument(arg_attr ? arg_attr : "");
 		if (TransformByString(PropNode->Value(),argument,true)==false)
-			std::cerr << "CSTransform::ReadFromXML: Warning: Reading of \"" << PropNode->Value() << "\" with arguments: \""  << argument << "\" failed." << std::endl;
+			logWarning() << "Failed to read \"" << PropNode->Value() << "\" with arguments \"" << argument << "\"";
 		PropNode=PropNode->NextSiblingElement();
 	}
 	return true;

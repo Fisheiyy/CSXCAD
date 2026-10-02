@@ -18,6 +18,7 @@
 #include "tinyxml.h"
 
 #include "CSPropMaterial.h"
+#include "CSXCADLogging.h"
 
 CSPropMaterial::CSPropMaterial(ParameterSet* paraSet) : CSProperties(paraSet)
 {
@@ -89,6 +90,18 @@ double CSPropMaterial::GetWeight(ParameterScalar *ps, int ny, const double* coor
 
 double CSPropMaterial::GetWeight(ParameterScalar &ps, const double* coords)
 {
+	// A non-parametric (plain-constant) weight ignores the coordinate array entirely --
+	// ParameterScalar::GetEvaluated() returns its stored value immediately in that case without
+	// touching ParaValues -- so skip the coordinate-system transform below (several sqrt/atan2/atan
+	// calls) rather than computing paraVal[] just to have it go unused. This is the common case: a
+	// uniform (non-spatially-weighted) material's WeightEpsilon/WeightMue/WeightKappa/WeightSigma
+	// defaults to the constant 1.0 and is never turned into a formula.
+	if (!ps.GetMode())
+	{
+		int EC=0;
+		return ps.GetEvaluated(NULL,EC);
+	}
+
 	double paraVal[7];
 	if (coordInputType==1)
 	{
@@ -117,7 +130,8 @@ double CSPropMaterial::GetWeight(ParameterScalar &ps, const double* coords)
 	double value = ps.GetEvaluated(paraVal,EC);
 	if (EC)
 	{
-		std::cerr << "CSPropMaterial::GetWeight: Error evaluating the weighting function (ID: " << this->GetID() << "): " << PSErrorCode2Msg(EC) << std::endl;
+		logError() << "Error evaluating weighting function for property " << this->GetID() << ": "
+		           << PSErrorCode2Msg(EC);
 	}
 	return value;
 }

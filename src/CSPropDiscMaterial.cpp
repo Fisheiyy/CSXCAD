@@ -25,6 +25,7 @@
 
 #include "ParameterCoord.h"
 #include "CSPropDiscMaterial.h"
+#include "CSXCADLogging.h"
 
 namespace {
 void* ReadDataSet(std::string filename, std::string d_name, hid_t type_id, int &rank, unsigned int &size, bool debug=false)
@@ -38,7 +39,7 @@ void* ReadDataSet(std::string filename, std::string d_name, hid_t type_id, int &
 	if (file_id < 0)
 	{
 		if (debug)
-			std::cerr << __func__ << ": Failed to open file, skipping..." << std::endl;
+			logError() << "Failed to open material file; skipping";
 		H5Fclose(file_id);
 		return NULL;
 	}
@@ -46,7 +47,7 @@ void* ReadDataSet(std::string filename, std::string d_name, hid_t type_id, int &
 	if (H5Lexists(file_id, d_name.c_str(), H5P_DEFAULT)<=0)
 	{
 		if (debug)
-			std::cerr << __func__ << ": Warning, dataset: \"" << d_name << "\" not found... skipping" << std::endl;
+			logWarning() << "Dataset \"" << d_name << "\" was not found; skipping";
 		H5Fclose(file_id);
 		return NULL;
 	}
@@ -55,7 +56,7 @@ void* ReadDataSet(std::string filename, std::string d_name, hid_t type_id, int &
 	if (status < 0)
 	{
 		if (debug)
-			std::cerr << __func__ << ": Warning, failed to read dimension for dataset: \"" << d_name << "\" skipping..." << std::endl;
+			logWarning() << "Failed to read dimensions for dataset \"" << d_name << "\"; skipping";
 		H5Fclose(file_id);
 		return NULL;
 	}
@@ -65,7 +66,7 @@ void* ReadDataSet(std::string filename, std::string d_name, hid_t type_id, int &
 	if (status < 0)
 	{
 		if (debug)
-			std::cerr << __func__ << ": Warning, failed to read dataset info: \"" << d_name << "\" skipping..." << std::endl;
+			logWarning() << "Failed to read dataset info for \"" << d_name << "\"; skipping";
 		delete[] dims;
 		H5Fclose(file_id);
 		return NULL;
@@ -85,7 +86,7 @@ void* ReadDataSet(std::string filename, std::string d_name, hid_t type_id, int &
 		data = (void*) new uint8[size];
 	else
 	{
-		std::cerr << __func__ << ": Error, unknown data type" << std::endl;
+		logError() << "Unknown material dataset type";
 		H5Fclose(file_id);
 		return NULL;
 	}
@@ -94,7 +95,7 @@ void* ReadDataSet(std::string filename, std::string d_name, hid_t type_id, int &
 	if (status < 0)
 	{
 		if (debug)
-			std::cerr << __func__ << ": Warning, failed to read dataset: \"" << d_name << "\" skipping..." << std::endl;
+			logWarning() << "Failed to read dataset \"" << d_name << "\"; skipping";
 		if (type_id==H5T_NATIVE_FLOAT)
 			delete[] (float*)data;
 		else if (type_id==H5T_NATIVE_INT)
@@ -206,7 +207,7 @@ int CSPropDiscMaterial::GetDBPos(const double* coords)
 	if (db_pos>=(int)m_DB_size)
 	{
 		//sanity check, this should not happen!!!
-		std::cerr << __func__ << ": Error, false DB position!" << std::endl;
+		logError() << "Invalid material database position";
 		return -1;
 	}
 	return db_pos;
@@ -396,7 +397,7 @@ bool CSPropDiscMaterial::ReadFile()
 	else if (m_FileType==0)
 		ok = ReadHDF5(m_Filename);
 	else
-		std::cerr << "CSPropDiscMaterial::ReadFile: Unknown file type or no filename given." << std::endl;
+		logError() << "Unknown material file type or no filename was provided";
 	m_FileRead = true;
 	return ok;
 }
@@ -404,13 +405,13 @@ bool CSPropDiscMaterial::ReadFile()
 bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 {
 	m_Filename = filename;
-	std::cout << __func__ << ": Reading \"" << filename << "\"" << std::endl;
+	logInfo() << "Reading material file \"" << filename << "\"";
 
 	// open hdf5 file
 	hid_t file_id = H5Fopen( filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT );
 	if (file_id < 0)
 	{
-		std::cerr << __func__ << ": Error, failed to open file, abort..." << std::endl;
+		logError() << "Failed to open material file; aborting read";
 		return false;
 	}
 
@@ -421,7 +422,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 
 	if (ver<2.0)
 	{
-		std::cerr << __func__ << ": Error, older file versions are no longer supported, abort..." << std::endl;
+		logError() << "Older material file versions are no longer supported; aborting read";
 		H5Fclose(file_id);
 		return false;
 	}
@@ -430,7 +431,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 	status = H5LTget_attribute_int(file_id, "/DiscData", "DB_Size", &db_size);
 	if (status<0)
 	{
-		std::cerr << __func__ << ": Error, can't read database size, abort..." << std::endl;
+		logError() << "Cannot read material database size; aborting read";
 		H5Fclose(file_id);
 		return false;
 	}
@@ -438,7 +439,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 	m_DB_size = db_size;
 	if (H5Lexists(file_id, "/DiscData", H5P_DEFAULT)<=0)
 	{
-		std::cerr << __func__ << ": Error, can't read database, abort..." << std::endl;
+		logError() << "Cannot read material database; aborting read";
 		H5Fclose(file_id);
 		return false;
 	}
@@ -446,7 +447,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 	hid_t dataset = H5Dopen2(file_id, "/DiscData", H5P_DEFAULT);
 	if (dataset<0)
 	{
-		std::cerr << __func__ << ": Error, can't open database" << std::endl;
+		logError() << "Cannot open material database";
 		H5Fclose(file_id);
 		return 0;
 	}
@@ -460,7 +461,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 	}
 	else
 	{
-		std::cerr << __func__ << ": No \"/DiscData/epsR\" found, skipping..." << std::endl;
+		logWarning() << "No /DiscData/epsR dataset found; skipping";
 		m_Disc_epsR=NULL;
 	}
 
@@ -472,7 +473,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 	}
 	else
 	{
-		std::cerr << __func__ << ": No \"/DiscData/kappa\" found, skipping..." << std::endl;
+		logWarning() << "No /DiscData/kappa dataset found; skipping";
 		m_Disc_kappa=NULL;
 	}
 
@@ -484,7 +485,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 	}
 	else
 	{
-		std::cerr << __func__ << ": No \"/DiscData/mueR\" found, skipping..." << std::endl;
+		logWarning() << "No /DiscData/mueR dataset found; skipping";
 		m_Disc_mueR=NULL;
 	}
 
@@ -496,7 +497,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 	}
 	else
 	{
-		std::cerr << __func__ << ": No \"/DiscData/sigma\" found, skipping..." << std::endl;
+		logWarning() << "No /DiscData/sigma dataset found; skipping";
 		m_Disc_sigma=NULL;
 	}
 
@@ -508,7 +509,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 	}
 	else
 	{
-		std::cerr << __func__ << ": no \"/DiscData/density\" found, skipping..." << std::endl;
+		logWarning() << "No /DiscData/density dataset found; skipping";
 		m_Disc_Density=NULL;
 	}
 
@@ -525,7 +526,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 		m_mesh[n] = (float*)ReadDataSet(filename, names[n], H5T_NATIVE_FLOAT, rank, size);
 		if ((m_mesh[n]==NULL) || (rank!=1) || (size<=1))
 		{
-			std::cerr << __func__ << ": Error, failed to read or invalid mesh, abort..." << std::endl;
+			logError() << "Failed to read material mesh or mesh is invalid; aborting read";
 			return false;
 		}
 		m_Size[n]=size;
@@ -537,7 +538,7 @@ bool CSPropDiscMaterial::ReadHDF5( std::string filename )
 
 	if ((m_Disc_Ind==NULL) || (rank!=3) || (size!=numCells))
 	{
-		std::cerr << __func__ << ": Error, can't read database indizies or size/rank is invalid, abort..." << std::endl;
+		logError() << "Cannot read material database indices or size/rank is invalid; aborting read";
 		delete[] m_Disc_Ind;
 		m_Disc_Ind = NULL;
 		return false;
